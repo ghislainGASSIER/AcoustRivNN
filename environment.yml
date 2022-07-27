@@ -1,6 +1,4 @@
 name: AcoustRivNN
-channels:
-  - defaults
 dependencies:
   - tensorflow==2.8.0
   - keras
