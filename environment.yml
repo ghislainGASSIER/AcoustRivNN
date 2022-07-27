@@ -1,6 +1,6 @@
 name: AcoustRivNN
 channels:
-  - conda-forge
+  - defaults
 dependencies:
   - tensorflow==2.8.0
   - keras
