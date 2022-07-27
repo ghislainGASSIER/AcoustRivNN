@@ -1,20 +1,16 @@
-name: stats
+name: AcoustRivNN
 channels:
-  - conda-forge  
-  - defaults
-  - anaconda
+  - conda-forge
 dependencies:
+  - tensorflow==2.8.0
+  - keras
   - numpy
   - scipy
   - scikit-learn==0.20.2
   - pandas
-  - numpy
   - plotly
   - matplotlib
-  - pydub
   - pillow
   - librosa
-  - tensorflow==2.8.0
-  - keras
   - joblib
 
