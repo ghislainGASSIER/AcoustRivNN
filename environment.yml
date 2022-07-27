@@ -1,11 +1,11 @@
-name: AcoustRivNN
+name: stats
 dependencies:
   - tensorflow==2.8.0
-  - keras
-  - numpy
+  - keras == 2.8.0
   - scipy
   - scikit-learn==0.20.2
-  - pandas
+  - pandas==1.4.1
+  - numpy==1.21.5
   - plotly
   - matplotlib
   - pillow
