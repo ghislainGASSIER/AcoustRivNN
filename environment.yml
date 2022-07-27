@@ -1,6 +1,6 @@
 name: stats
 channels:
-  -defaults
+  - defaults
 dependencies:
   - tensorflow==2.8.0
   - keras == 2.8.0
