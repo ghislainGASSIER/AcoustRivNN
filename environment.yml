@@ -1,0 +1,20 @@
+name: stats
+channels:
+  - conda-forge  
+  - defaults
+  - anaconda
+dependencies:
+  - numpy
+  - scipy
+  - scikit-learn==0.20.2
+  - pandas
+  - numpy
+  - plotly
+  - matplotlib
+  - pydub
+  - pillow
+  - librosa
+  - tensorflow==2.8.0
+  - keras
+  - joblib
+

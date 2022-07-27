@@ -34,6 +34,9 @@ def draw_Estimed_Masse(Masse,tps,cl_Masse):
     ))
     print(np.unique(Masse))
     fig.update_layout(
+        title="Estimation de la masse",
+        xaxis_title="Temps (s)",
+        yaxis_title="Masse (g)",
         yaxis=dict(
             tickmode='array',
             tickvals=np.unique(Masse),
@@ -50,6 +53,9 @@ def draw_Estimed_Granulo(Granulo,tps,cl_granulo):
     ))
     print(np.unique(Granulo))
     fig.update_layout(
+        title="Estimation de la granulométie",
+        xaxis_title="Temps (s)",
+        yaxis_title="Granulométrie (cm)",
         yaxis=dict(
             tickmode='array',
             tickvals=np.unique(Granulo),
@@ -94,7 +100,7 @@ def f(x, A, b):
     y = LA.norm(np.dot(A, x) - b, 2)
     return y
 def gradientProjeter(A, signal, lipchitz, M):
-    print("    Appel de la fonction gradientProjeter")
+    #print("    Appel de la fonction gradientProjeter")
     Poids = np.ones(A.shape[1])
     erreur = 0
     x0 = np.zeros(A.shape[1])
@@ -108,8 +114,8 @@ def gradientProjeter(A, signal, lipchitz, M):
     invlipchitz = np.divide(1.0, lipchitz)
     erreur = 0
     i = 0
-    print("Parametre de régularisation :", ParametreTraitement["Regularisation"])
-    print("    Pas de descente :", invlipchitz)
+    #print("Parametre de régularisation :", ParametreTraitement["Regularisation"])
+    #print("    Pas de descente :", invlipchitz)
     while erreur == 0:  # boucle selection
         # print "i= ", i
         AtomeEstimer = np.argmax(xn)
@@ -122,7 +128,7 @@ def gradientProjeter(A, signal, lipchitz, M):
             == 0
             and i > 0
         ):
-            print(
+            '''            print(
                 "    "
                 + str(round((i * 100) / ParametreTraitement["NbMaxIteration"]))
                 + " %"
@@ -133,6 +139,8 @@ def gradientProjeter(A, signal, lipchitz, M):
             print("    Nombre de coefficient non null : ", norm_l0)
             # print '    Pas de descente :',self.rho
             print("\n")
+            '''
+
         # descente de gradient
         dfxn = df(xn, C, M)
         fxn = f(xn, A, signal)
@@ -163,17 +171,21 @@ def gradientProjeter(A, signal, lipchitz, M):
             RHO = np.concatenate((RHO, np.array([rho])))
         if LA.norm(xnp1 - xn, 2) < ParametreTraitement["Stop"]:
             erreur = 1
-            print(
+            '''print(
                 "       Atomes selectionner :  Arret sur l erreur entre deux iterations :",
                 ParametreTraitement["Stop"],
             )
+            '''
+
         if i > ParametreTraitement["NbMaxIteration"]:
             erreur = 2
-            print(
+            '''            print(
                 "       Atomes selectionner :  Arret sur nombre maximum d"
                 "iterations : ",
                 i,
             )
+            '''
+
         xn = xnp1
         i = i + 1
     # show(block=False)
@@ -204,9 +216,11 @@ nb_audio = int(np.floor(len(signal) / sr))
 SignalDecoupe = []
 for i in range(nb_audio):
     SignalDecoupe.append(signal[i * sr:(i + 1) * sr])
-type_NN = st.sidebar.selectbox(('Choose a type of neuronal network'),('CNN-STFT','CNN-AcoustRiv', 'MLP'))
-if(type_NN=='MlP'):
-    model = keras.models.load_model("Model_MLP_Augmented_DataBase.h5")
+type_NN = st.sidebar.selectbox(('Choose a type of neuronal network'),('Faite votre choix','CNN-STFT','CNN-AcoustRiv', 'MLP'))
+
+if(type_NN=='MLP'):
+    print("Begin MLP")
+    model = keras.models.load_model("Model_MLP.h5")
     DescriptorList=[]
     for sig in SignalDecoupe:
         f, Pxx_den = signal.periodogram(sig, fs=192000)
@@ -216,9 +230,12 @@ if(type_NN=='MlP'):
                 P.append(Pxx_den[i])
         P = P / np.max(P)
         DescriptorList.append(P)
+    encoder = joblib.load('encoder_MLP.joblib')
+    Intervalle_Masse=np.load('intervals_masse_MLP.npy')
+    Intervalle_Granulo=np.load('intervals_granulometrie_MLP.npy')
 if(type_NN=='CNN-STFT'):
-    print('Begin')
-    model = keras.models.load_model("Model_AcoustRivNN_STFT_flux_and_granulo.h5")
+    print('Begin STFT')
+    model = keras.models.load_model("Model_STFT.h5")
     DescriptorList = []
     for sig in SignalDecoupe:
         spec = np.abs(librosa.stft(sig, n_fft=1024, hop_length=512))
@@ -228,7 +245,8 @@ if(type_NN=='CNN-STFT'):
     Intervalle_Granulo=np.load('intervals_granulometrie_STFT.npy')
     print("end")
 if(type_NN=='CNN-AcoustRiv'):
-    model = keras.models.load_model("Model_AcoustRivNN_AcoustRiv_flux_and_granulo.h5")
+    print('Begin AcoustRiv')
+    model = keras.models.load_model("Model_AcoustRiv.h5")
     ParametreDictionnaire = {}
     ParametreDictionnaire['RateDiametre'] = 0.001  # 0.01#
     ParametreDictionnaire['AtomeShape'] = signal.shape[0]  # 960# 350
@@ -245,48 +263,44 @@ if(type_NN=='CNN-AcoustRiv'):
     lipchitz = LA.norm(M, 2)
     DescriptorList = []
     for sig in SignalDecoupe:
-        rate, signal = scipy.io.wavfile.read(sig)
+        #rate, signal = scipy.io.wavfile.read(sig)
         PlanTempsRayon = gradientProjeter(A, sig, lipchitz, M)
         DescriptorList.append(PlanTempsRayon)
+    encoder = joblib.load('encoder_CNN_AcoustRiv.joblib')
+    Intervalle_Masse = np.load('intervals_masse_AcoustRiv.npy')
+    Intervalle_Granulo = np.load('intervals_granulometrie_AcoustRiv.npy')
+print('End AcoustRiv')
+try :
+    print('Begin prediction')
+    pred = model.predict(np.array(DescriptorList))
+    labels,classes=[],[]
 
-pred = model.predict(np.array(DescriptorList))
+    for e in pred:
+        e=np.reshape(e,(1,-1))
+        labels.append((e>=0.5).astype(int))
+    for label in labels:
+        cl=encoder.inverse_transform(label)
+        classes.append(cl)
+    tps=np.arange(nb_audio)
+    Masse,Granulo=[],[]
+    for c in classes:
+        if (c[0][0]==None or c[0][1]==None):
+            Masse.append(0)
+            Granulo.append(0)
+        else:
+            Masse.append(c[0][1])
+            Granulo.append(c[0][0])
 
-labels,classes=[],[]
+    cl_masse,cl_granulo=[],[]
+    for i in range(1,len(Intervalle_Masse)):
+        cl_masse.append(str([Intervalle_Masse[i-1],Intervalle_Masse[i]]))
 
-for e in pred:
-    e=np.reshape(e,(1,-1))
-    labels.append((e>=0.5).astype(int))
+    for i in range(1,len(Intervalle_Granulo)):
+        cl_granulo.append(str([np.round(Intervalle_Granulo[i - 1],1), np.round(Intervalle_Granulo[i],1)]))
 
-for label in labels:
-    cl=encoder.inverse_transform(label)
-    classes.append(cl)
-
-tps=np.arange(nb_audio)
-
-Masse,Granulo=[],[]
-
-for c in classes:
-
-    if (c[0][0]==None or c[0][1]==None):
-        Masse.append(0)
-        Granulo.append(0)
-    else:
-        Masse.append(c[0][1])
-        Granulo.append(c[0][0])
-#draw_sound(signal,time)
-
-cl_masse,cl_granulo=[],[]
-
-
-for i in range(1,len(Intervalle_Masse)):
-    cl_masse.append(str([Intervalle_Masse[i-1],Intervalle_Masse[i]]))
-
-for i in range(1,len(Intervalle_Granulo)):
-    cl_granulo.append(str([Intervalle_Granulo[i - 1], Intervalle_Granulo[i]]))
-
-
-
-draw_Estimed_Masse(Masse,tps,cl_masse)
-draw_Estimed_Granulo(Granulo,tps,cl_granulo)
+    draw_Estimed_Masse(Masse,tps,cl_masse)
+    draw_Estimed_Granulo(Granulo,tps,cl_granulo)
+except:
+    print('rien à faire')
 
 
